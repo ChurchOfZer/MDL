@@ -13,6 +13,7 @@ final class Migrations
         ['attempt_answers', 'revealed', 'TINYINT(1) NOT NULL DEFAULT 0', 'INTEGER NOT NULL DEFAULT 0'],
         ['settings', 'image_blur_top', 'INT NOT NULL DEFAULT 55 AFTER sa_open', 'INTEGER NOT NULL DEFAULT 55'],
         ['settings', 'image_blur_bottom', 'INT NOT NULL DEFAULT 100 AFTER image_blur_top', 'INTEGER NOT NULL DEFAULT 100'],
+        ['resources', 'position', 'INT NOT NULL DEFAULT 0 AFTER description', 'INTEGER NOT NULL DEFAULT 0'],
     ];
 
     /** @return string[] the changes made, e.g. ["questions.image_url"] */
@@ -25,8 +26,22 @@ final class Migrations
             }
             Db::pdo()->exec("ALTER TABLE $table ADD COLUMN $column " . (Db::isSqlite() ? $sqlite : $mysql));
             $done[] = "$table.$column";
+            if ("$table.$column" === 'resources.position') {
+                self::numberLinks();
+            }
         }
         return $done;
+    }
+
+    /** Links were listed newest first before they could be reordered: keep that order as the starting one. */
+    private static function numberLinks(): void
+    {
+        $ids = array_column(Db::all('SELECT id FROM resources ORDER BY created_at DESC, id DESC'), 'id');
+        Db::tx(static function () use ($ids): void {
+            foreach ($ids as $i => $id) {
+                Db::exec('UPDATE resources SET position = ? WHERE id = ?', [$i, (int) $id]);
+            }
+        });
     }
 
     private static function hasColumn(string $table, string $column): bool

@@ -72,8 +72,9 @@ $resourceShape = static fn(array $r): array => [
     'created_at' => Util::iso($r['created_at']),
 ];
 
+// The order set by the admins; links with the same position (never reordered) show newest first.
 $router->get('/resources', static fn(): array => [
-    'resources' => array_map($resourceShape, Db::all('SELECT * FROM resources ORDER BY created_at DESC, id DESC')),
+    'resources' => array_map($resourceShape, Db::all('SELECT * FROM resources ORDER BY position, created_at DESC, id DESC')),
 ]);
 
 $resourceInput = static function (): array {
@@ -89,8 +90,33 @@ $resourceInput = static function (): array {
 
 $router->post('/admin/resources', static function () use ($resourceInput, $resourceShape): array {
     $admin = Auth::requireAdmin();
-    $id = Db::insert('resources', $resourceInput() + ['created_by' => $admin['id'], 'created_at' => Util::now(), 'updated_at' => Util::now()]);
+    $row = $resourceInput();
+    // A new link goes to the top of the list.
+    $top = (int) (Db::val('SELECT MIN(position) FROM resources') ?? 1) - 1;
+    $id = Db::insert('resources', $row + ['position' => $top, 'created_by' => $admin['id'], 'created_at' => Util::now(), 'updated_at' => Util::now()]);
     return Http::created(['resource' => $resourceShape(Db::one('SELECT * FROM resources WHERE id = ?', [$id]))]);
+});
+
+// Declared before /admin/resources/{id}, which would otherwise take "order" for an id.
+$router->put('/admin/resources/order', static function (): array {
+    Auth::requireAdmin();
+    $ids = Http::input()['ids'] ?? null;
+    if (!is_array($ids) || !array_is_list($ids) || array_filter($ids, static fn($id) => !is_int($id) || $id < 1)) {
+        throw new HttpError(422, 'Liste de liens invalide.');
+    }
+    $existing = array_map('intval', array_column(Db::all('SELECT id FROM resources'), 'id'));
+    $given = array_unique($ids);
+    sort($existing);
+    sort($given);
+    if (count($given) !== count($ids) || $given !== $existing) {
+        throw HttpError::conflict('La liste des liens a changé entre-temps. Rechargez la page, puis recommencez.');
+    }
+    Db::tx(static function () use ($ids): void {
+        foreach ($ids as $i => $id) {
+            Db::exec('UPDATE resources SET position = ? WHERE id = ?', [$i, $id]);
+        }
+    });
+    return ['ok' => true];
 });
 
 $router->put('/admin/resources/{id}', static function (string $id) use ($resourceInput, $resourceShape): array {

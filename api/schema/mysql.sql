@@ -167,6 +167,7 @@ CREATE TABLE resources (
   title VARCHAR(200) NOT NULL,
   url VARCHAR(500) NOT NULL,
   description TEXT NULL,
+  position INT NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   CONSTRAINT resources_user_fk FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL

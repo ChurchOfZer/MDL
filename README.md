@@ -30,7 +30,7 @@ mdl/
 - **Applications**: the applicant confirms their email, then every porte-parole must approve (one refusal rejects). On acceptance, the applicant gets a personal signup link. Certified members can co-opt candidates directly.
 - **Questionnaires**: two domains (Droit Naturel, École Autrichienne) and two levels (Bases Acquises, Sait Analyser). Questions are drawn in proportion to their difficulty, the timer runs on the server, and grading happens on the server. Both domains at "Sait Analyser" make a member *Membre certifié* automatically.
 - **Member badge**: the target-and-arrow logo is drawn as an SVG whose rings light up with the member's levels. The top half of each ring is Droit Naturel, the bottom half École Autrichienne. It replaces the ten 480 KB JPEGs.
-- **Management**: porte-parole review applications and manage members (certification, level reset, .xlsx export). Administrators also manage questions (.xlsx import/export compatible with the old spreadsheet format), questionnaire settings, blog posts (Markdown editor with image upload) and links.
+- **Management**: porte-parole review applications and manage members (certification, level reset, .xlsx export). Administrators also manage questions (.xlsx import/export compatible with the old spreadsheet format), questionnaire settings, blog posts (Markdown editor with image upload) and links. Links are shown in the order the administrators set: drag a link by its handle or use its arrows. A new link goes to the top.
 
 ### Security problems of the old app that this design rules out
 
